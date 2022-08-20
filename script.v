@@ -377,5 +377,198 @@ Section S3_3.
     - assumption.
   Qed.
 
-
 End S3_3.
+
+Section S4.
+  Variable (X:Type).
+  Definition set X := X -> Prop.
+  Notation "{ x1 , x2 , .. , xn }" := (fun x => or (x = x1) (or (x=x2) (.. (or (x = xn) True) ..))).
+  (* only local or "only parsing" *)
+  Local Notation " x ∈ A " := (A x) (only parsing, at level 67).
+  Local Notation " x ∉ A " := (~(x∈A)) (only parsing, at level 67).
+  (* Notation "{ x | P x }" := (P). *)
+  (* {x | False} = (fun x => False) *)
+  Definition emptyset := (fun (x:X) => False).
+  Local Notation "∅" := emptyset.
+
+  Definition union (A:set X) (B:set X) := (fun x => x ∈ A \/ x ∈ B).
+  Local Notation "A ∪ B" := (union A B) (at level 67).
+  Definition intersection (A:set X) (B:set X) := (fun x => x ∈ A /\ x ∈ B).
+  Local Notation "A ∩ B" := (intersection A B) (at level 67).
+  Definition difference (A:set X) (B:set X) := (fun x => x ∈ A /\ x ∉ B).
+  Local Notation "A \ B" := (difference A B) (at level 67).
+  Definition complement (A:set X) := (fun x => x ∉ A).
+  Local Notation "! A" := (complement A) (at level 75).
+  Definition subset (A:set X) (B:set X) := (forall x, x ∈ A -> x ∈ B).
+  Local Notation "A ⊆ B" := (subset A B) (at level 67).
+  Definition setequality (A:set X) (B:set X) := (forall x, x ∈ A <-> x ∈ B).
+  Local Notation "A ≡ B" := (setequality A B) (at level 70).
+
+  Theorem SetEqualitySubset A B:
+    A ≡ B <-> A ⊆ B /\ B ⊆ A.
+  Proof.
+    (* Proof from the lecture notes *)
+    split.
+    - intros.
+      unfold subset, setequality in *.
+      now setoid_rewrite H.
+    - now intros [H1 H2] x;split;[intros H%H1 | intros H%H2].
+  Restart.
+    (* single steps *)
+    split.
+    - intros.
+      unfold setequality in H.
+      split.
+      + intros x HA.
+        apply H.
+        assumption.
+      + intros x HB.
+        apply H.
+        assumption.
+    - intros [H1 H2] x. 
+      split.
+      + intros HA.
+        specialize (H1 x).
+        apply H1 in HA.
+        assumption.
+      + intros HB.
+        specialize (H2 x).
+        apply H2 in HB.
+        assumption.
+    Restart.
+      (* short with automation *)
+      split.
+      - intros. split;intros x Hx;specialize (H x);now apply H.
+      - intros [] ?. split; eauto.
+    Restart.
+      firstorder.
+    Qed.
+
+  Theorem DifferenceComplement A B:
+    A \ B ≡ (!B) ∩  A.
+  Proof.
+    split.
+    - intros H.
+      destruct H.
+      split.
+      + apply H0.
+      + assumption.
+    - intros H.
+      destruct H.
+      split.
+      + assumption.
+      + apply H.
+  Qed.
+
+  Definition cart_product {X Y} (A:set X) (B:set Y) := 
+    (fun '(a,b) => a ∈ A /\ b ∈ B).
+
+  Lemma disjoint_difference A B:
+    (A \ B) ∩ (A ∩ B) ≡ ∅.
+  Proof.
+    (* proof from the script but without contraposition *)
+    split.
+    - intros [[] []].
+      contradict H0.
+      assumption.
+    - intros H. contradict H.
+  Qed.
+    
+  Lemma commutative_intersection A B:
+    A ∩ B ≡ B ∩ A.
+  Proof.
+    firstorder.
+  Qed.
+
+  Theorem disjoint_decomposition (A:set X) (B:set X) :
+    A ∪ B ≡ (A \ B) ∪ (B \ A) ∪ (A ∩ B) /\
+    (
+      (A\B) ∩ (B\A) ≡ ∅ /\
+      (A\B) ∩ (A ∩ B) ≡ ∅ /\
+      (B\A) ∩ (A ∩ B) ≡ ∅
+    )
+    .
+    Proof.
+      split.
+      - split.
+        (* ⊆ *)
+        + intros H.
+          destruct H.
+          * destruct (classic (x ∈ B)).
+            -- right. split;assumption.
+            -- left. left. split;assumption.
+          * destruct (classic (x ∈ A)).
+            -- right. split;assumption.
+            -- left. right. split;assumption.
+        (* ⊇ *)
+        + intros H.
+          destruct H as [[H | H] | H].
+          all: destruct H.
+          * left. assumption.
+          * right. assumption.
+          * left. assumption.
+      (* disjooint *)
+      - split;[|split].
+        + split. 2: easy. (* 2 is easy because it is contradictory *)
+          intros [[][]].
+          contradict H0.
+          assumption.
+        + apply disjoint_difference.
+        (* TODO: use lemma *)
+        + split. 2: easy. 
+          intros [[][]].
+          contradict H0.
+          assumption.
+    Qed.
+
+    (* TODO: cardinality *)
+
+    Definition powerset (A:set X) := (fun x => x ⊆ A).
+
+    Theorem T12 A:
+      ∅ ∈ powerset A /\ A ∈ powerset A.
+    Proof.
+      split;intros x Hx.
+      - contradict Hx.
+      - assumption.
+    Qed.
+
+
+    Section Relations.
+      (* TODO: relations *)
+      Variable (A B : Type).
+      Implicit Type (a:A) (b:B).
+
+      Definition left_total R :=
+          forall a, exists b, R (a,b).
+
+      Definition surjective R :=
+          forall b, exists a, R (a,b).
+
+      Definition injective R :=
+          forall a1 a2, forall b,
+          R (a1,b) -> R (a2,b) -> a1 = a2.
+
+      Definition functional R :=
+          forall b1 b2, forall a,
+          R (a,b1) -> R (a,b2) -> b1 = b2.
+
+      Definition bijective R := 
+        surjective R /\ injective R.
+
+      Definition total_function R :=
+        left_total R /\ functional R.
+
+      Definition bijection R :=
+        total_function R /\ bijective R.
+
+      (* Z -> N
+          (BinNums)
+          2x
+          -2x-1
+      *)
+
+    End Relations.
+
+
+End S4.
