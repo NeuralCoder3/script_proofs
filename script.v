@@ -73,7 +73,7 @@ Ltac NegIntro :=
 
 Ltac Assert H := assert H.
 
-Require Import Classical.
+Require Import Classical Lia.
 
 Ltac EitherOf P :=
     destruct (classic P).
@@ -225,11 +225,25 @@ Ltac ForallElim H v :=
 Ltac ExistsIntro t :=
   exists t.
 Ltac ExistsElim H v :=
-  destruct H as [v ?].
+  let fn := fresh in
+  pose proof (fn := H);
+  destruct fn as [v ?].
+
+Ltac EqualsIntro := reflexivity.
+
+Ltac EqualsElim H := rewrite H.
+Tactic Notation "EqualsElim←" constr(H) := rewrite <- H.
+
+(* not Axiom due to naming restriction *)
+Ltac axiom H := pose proof H.
+Ltac lemma H := pose proof H.
+
+Ltac Defn H := unfold H.
 
 Section S3_3.
 
   Variable (X:Type).
+  Implicit Type (x y:X).
 
   Example QuantHandling
     (P Q : X*X -> Prop):
@@ -266,6 +280,102 @@ Section S3_3.
       Assumption.
   Qed.
 
+  Goal forall x y, x=y -> y=x.
+  Proof.
+    ForallIntro x.
+    ForallIntro y.
+    ImplIntro.
+    EqualsElim H.
+    EqualsIntro.
+  Qed.
+
+  (* Lemma 12 *)
+  Lemma EqTrans:
+    forall x y z, x=y -> y=z -> x=z.
+  Proof.
+    ForallIntro x.
+    ForallIntro y.
+    ForallIntro z.
+    ImplIntro.
+    ImplIntro.
+    EqualsElim H.
+    EqualsElim← H0.
+    EqualsIntro.
+  Qed.
+
+  Definition leq n m := exists k, m = n+k.
+  Notation "n ≤ m" := (leq n m) (at level 67).
+
+  (* Lemma 13 *)
+  Lemma LeqRefl: 
+    forall n, n ≤ n.
+  Proof.
+    ForallIntro x.
+    ExistsIntro 0.
+    axiom plus_n_O.
+    ForallElim H x.
+    EqualsElim← H0.
+    EqualsIntro.
+  Restart.
+    ForallIntro x.
+    Defn leq.
+    ExistsIntro 0.
+    axiom plus_n_O.
+    ForallElim H x.
+    EqualsElim← H0.
+    EqualsIntro.
+  Qed.
+
+  Definition divide (x:nat) n := exists k, x*k = n.
+  Notation "x | n" := (divide x n) (at level 67).
+  Definition even n := 2 | n.
+
+  Lemma even_add:
+    forall (x y:nat), 
+      even x -> even y -> even (x+y).
+  Proof.
+    ForallIntro x.
+    ForallIntro y.
+    ImplIntro.
+    ImplIntro.
+    Defn even.
+    Defn divide.
+    ExistsElim H k1.
+    ExistsElim H0 k2.
+    ExistsIntro (k1+k2).
+    axiom (PeanoNat.Nat.mul_add_distr_l).
+    ForallElim H3 2.
+    ForallElim H4 k1.
+    ForallElim H5 k2.
+    EqualsElim H6.
+    EqualsElim← H1.
+    EqualsElim← H2.
+    EqualsIntro.
+  Restart.
+    (* shortened version *)
+    intros x y [k1 H1] [k2 H2].
+    unfold even, divide.
+    exists (k1+k2).
+    rewrite PeanoNat.Nat.mul_add_distr_l.
+    rewrite H1,H2.
+    reflexivity.
+  Restart.
+    (* even shorter *)
+    intros.
+    destruct H as [kx ?],H0 as [ky ?].
+    exists (kx+ky).
+    lia.
+  Qed.
+
+  Example ComplexApply
+    (P:X*X -> Prop):
+  (forall a b c, P (a,b) -> P(c,b) -> P(a,c)) -> forall a b, P(a,b) -> P(a,a).
+  Proof.
+    intros.
+    apply (H a b a).
+    - assumption.
+    - assumption.
+  Qed.
 
 
 End S3_3.
