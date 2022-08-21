@@ -536,21 +536,22 @@ Section S4.
 
     Section Relations.
       (* TODO: relations *)
-      Variable (A B : Type).
-      Implicit Type (a:A) (b:B).
+      Variable (Y Z : Type).
+      Variable (A:set Y) (B:set Z).
+      Implicit Type (a:Y) (b:Z).
 
       Definition left_total R :=
-          forall a, exists b, R (a,b).
+          forall a, a ∈ A -> exists b, b ∈ B /\ R (a,b).
 
       Definition surjective R :=
-          forall b, exists a, R (a,b).
+          forall b, b ∈ B -> exists a, a ∈ A /\ R (a,b).
 
       Definition injective R :=
-          forall a1 a2, forall b,
+          forall a1 a2, a1 ∈ A -> a2 ∈ A -> forall b, b ∈ B ->
           R (a1,b) -> R (a2,b) -> a1 = a2.
 
       Definition functional R :=
-          forall b1 b2, forall a,
+          forall b1 b2, b1 ∈ B -> b2 ∈ B -> forall a, a ∈ A ->
           R (a,b1) -> R (a,b2) -> b1 = b2.
 
       Definition bijective R := 
@@ -569,6 +570,22 @@ Section S4.
       *)
 
     End Relations.
+
+    Arguments bijection {Y Z}.
+
+    Theorem T15 A:
+      ~ exists f, bijection A (powerset A) f.
+    Proof.
+      intros [f [[Htot Hfun] [Hsur Hinj]]].
+      assert (S:set X).
+      {
+        refine (fun x => _).
+        destruct (classic (x ∈ A)).
+        (* {x∈A | _ } *)
+        (* refine (fun x => x ∈ A /\ _).
+        specialize (Htot x). *)
+      }
+      pose (S:= fun x => x ∈ A /\ x ∉ (f x)).
 
 
 End S4.
