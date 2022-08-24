@@ -380,29 +380,59 @@ Section S3_3.
 End S3_3.
 
 Section S4.
-  Variable (X:Type).
-  Definition set X := X -> Prop.
-  Notation "{ x1 , x2 , .. , xn }" := (fun x => or (x = x1) (or (x=x2) (.. (or (x = xn) True) ..))).
-  (* only local or "only parsing" *)
-  Local Notation " x ∈ A " := (A x) (only parsing, at level 67).
-  Local Notation " x ∉ A " := (~(x∈A)) (only parsing, at level 67).
-  (* Notation "{ x | P x }" := (P). *)
-  (* {x | False} = (fun x => False) *)
-  Definition emptyset := (fun (x:X) => False).
-  Local Notation "∅" := emptyset.
+  Require Import Sets.Classical_sets
+  Sets.Powerset_Classical_facts.
 
-  Definition union (A:set X) (B:set X) := (fun x => x ∈ A \/ x ∈ B).
-  Local Notation "A ∪ B" := (union A B) (at level 67).
-  Definition intersection (A:set X) (B:set X) := (fun x => x ∈ A /\ x ∈ B).
-  Local Notation "A ∩ B" := (intersection A B) (at level 67).
-  Definition difference (A:set X) (B:set X) := (fun x => x ∈ A /\ x ∉ B).
-  Local Notation "A \ B" := (difference A B) (at level 67).
-  Definition complement (A:set X) := (fun x => x ∉ A).
-  Local Notation "! A" := (complement A) (at level 75).
-  Definition subset (A:set X) (B:set X) := (forall x, x ∈ A -> x ∈ B).
-  Local Notation "A ⊆ B" := (subset A B) (at level 67).
-  Definition setequality (A:set X) (B:set X) := (forall x, x ∈ A <-> x ∈ B).
-  Local Notation "A ≡ B" := (setequality A B) (at level 70).
+  (* Import Sets.Classical_sets. *)
+  (* Print In. *)
+
+  Variable (U:Type).
+  Implicit Type (A B:Ensemble U).
+
+  Check In.
+  Locate "_ \/ _".
+  (* Print Notations. *)
+  Notation "x ∈ A" := (In _ A x) (at level 67).
+  Notation " x ∉ A " := (~(x∈A)) (only parsing, at level 67).
+  Print Included.
+  Notation "A ⊆ B" := (Included _ A B) (at level 67).
+  (* Check Union_inv. *)
+
+  Definition union A B := 
+    fun x => x ∈ A \/ x ∈ B.
+
+  (* Goal forall A B, forall x, union A B x <-> Union _ A B x.
+  Proof.
+    intros;split;intros H.
+    - destruct H.
+      + now left.
+      + now right.
+    - apply Union_inv in H as [];firstorder.
+  Qed. *)
+  (* Print Union. *)
+  (* Print Empty_set. *)
+
+  Definition intersection A B := 
+    fun x => x ∈ A /\ x ∈ B.
+
+  Definition difference A B := 
+    fun x => x ∈ A /\ x ∉ B.
+
+  Check Empty_set.
+  Print Complement.
+
+  Notation "A ∪ B" := (union A B) (at level 67).
+  Notation "A ∩ B" := (intersection A B) (at level 67).
+  Notation "A \ B" := (difference A B) (at level 67).
+  Definition setequality A B := (forall x, x ∈ A <-> x ∈ B).
+  Notation "A ≡ B" := (setequality A B) (at level 70).
+  Notation "∅" := (Empty_set U).
+  Notation "! A" := (Complement _ A) (at level 75).
+
+  Check Power_set.
+
+
+  Notation "{ x1 , x2 , .. , xn }" := (fun x => or (x = x1) (or (x=x2) (.. (or (x = xn) True) ..))).
 
   Theorem SetEqualitySubset A B:
     A ≡ B <-> A ⊆ B /\ B ⊆ A.
@@ -410,7 +440,7 @@ Section S4.
     (* Proof from the lecture notes *)
     split.
     - intros.
-      unfold subset, setequality in *.
+      unfold Included, setequality in *.
       now setoid_rewrite H.
     - now intros [H1 H2] x;split;[intros H%H1 | intros H%H2].
   Restart.
@@ -460,8 +490,8 @@ Section S4.
       + apply H.
   Qed.
 
-  Definition cart_product {X Y} (A:set X) (B:set Y) := 
-    (fun '(a,b) => a ∈ A /\ b ∈ B).
+  (* Definition cart_product {X Y} (A:set X) (B:set Y) := 
+    (fun '(a,b) => a ∈ A /\ b ∈ B). *)
 
   Lemma disjoint_difference A B:
     (A \ B) ∩ (A ∩ B) ≡ ∅.
@@ -573,14 +603,22 @@ Section S4.
 
     Arguments bijection {Y Z}.
 
+    (* first with our relation machinery *)
+    (* then nice functional in type theory 
+        (maybe the one from my Forum picture?) *)
+    (* not directly Lawvere (too abstract) *)
+
     Theorem T15 A:
       ~ exists f, bijection A (powerset A) f.
     Proof.
       intros [f [[Htot Hfun] [Hsur Hinj]]].
       assert (S:set X).
       {
-        refine (fun x => _).
-        destruct (classic (x ∈ A)).
+        refine (fun x => exists (h:x∈A), _).
+        specialize (Htot x h).
+        Search "exists" "sig".
+        apply exists_to_inhabited_sig in Htot.
+        (* destruct (classic (x ∈ A)). *)
         (* {x∈A | _ } *)
         (* refine (fun x => x ∈ A /\ _).
         specialize (Htot x). *)
