@@ -1,4 +1,9 @@
+(* 
+  install Coq and the VSCode plugin
+  or use the online CoqIDE
+  https://jscoq.github.io/scratchpad.html
 
+*)
 Notation "⊥" := False.
 Notation "⊤" := True.
 Notation "¬" := not.
@@ -427,9 +432,8 @@ Section S4.
   Definition setequality A B := (forall x, x ∈ A <-> x ∈ B).
   Notation "A ≡ B" := (setequality A B) (at level 70).
   Notation "∅" := (Empty_set U).
-  Notation "! A" := (Complement _ A) (at level 75).
+  Notation "A 'ᶜ'" := (Complement _ A) (at level 75).
 
-  Check Power_set.
 
 
   Notation "{ x1 , x2 , .. , xn }" := (fun x => or (x = x1) (or (x=x2) (.. (or (x = xn) True) ..))).
@@ -475,7 +479,7 @@ Section S4.
     Qed.
 
   Theorem DifferenceComplement A B:
-    A \ B ≡ (!B) ∩  A.
+    A \ B ≡ (B ᶜ) ∩  A.
   Proof.
     split.
     - intros H.
@@ -510,7 +514,7 @@ Section S4.
     firstorder.
   Qed.
 
-  Theorem disjoint_decomposition (A:set X) (B:set X) :
+  Theorem disjoint_decomposition A B :
     A ∪ B ≡ (A \ B) ∪ (B \ A) ∪ (A ∩ B) /\
     (
       (A\B) ∩ (B\A) ≡ ∅ /\
@@ -553,15 +557,38 @@ Section S4.
 
     (* TODO: cardinality *)
 
-    Definition powerset (A:set X) := (fun x => x ⊆ A).
+    Print Power_set.
+    (* Arguments Power_set {U}. *)
+    Definition powerset A := (fun x => x ⊆ A).
+    (* Notation powerset := Power_set. *)
 
     Theorem T12 A:
       ∅ ∈ powerset A /\ A ∈ powerset A.
     Proof.
-      split;intros x Hx.
+      split; intros x Hx.
       - contradict Hx.
       - assumption.
     Qed.
+
+
+    Set Implicit Arguments.
+
+    Definition surjective_fun (X Y:Type) (f:X->Y) : Prop :=
+      forall y, exists x, f x = y.
+
+    Theorem Cantor X:
+      ~ exists (f:X->X->Prop), surjective_fun f.
+    Proof.
+      intros [f H].
+      pose (S := fun x => x ∉ f x).
+      destruct (H S) as [x Hf].
+      assert(HS: x ∈ S <-> x ∈ f x).
+      {
+        rewrite Hf. tauto.
+      }
+      unfold S, In in HS. tauto.
+    Qed.
+
 
 
     Section Relations.
