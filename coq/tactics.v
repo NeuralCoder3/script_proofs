@@ -4,6 +4,11 @@ Require Import Nat PeanoNat.
 (* Require Import ssreflect ssrbool. *)
 Import Nat.
 
+
+(*
+TODO: left, right: only if goal is a disjunction
+*)
+
 Ltac get_name := fresh "H0".
 
 (*
@@ -218,3 +223,8 @@ Ltac axiom H :=
   (* assert H by admit. *)
   let A := fresh "A0" in
   pose proof H as A.
+
+
+Definition leq (x y:nat) := exists z, x+z = y.
+Notation "x <= y" := (leq x y).
+Definition even (x:nat) := exists k, x = 2*k.

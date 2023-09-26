@@ -6,7 +6,6 @@ Load tactics.
 Example E3_20 Object (P Q:Object*Object->Prop):
     (forall x y, P(x,y) -> Q(y,x)) /\ (forall x, P(x,x)) -> forall y, Q(y,y).
 Proof.
-    (* intros ? ? ?. *)
     impl_intro.
     and_elim H0.
     forall_intro z.
@@ -15,11 +14,12 @@ Proof.
     impl_apply H4.
     forall_elim H2 z.
     assumption H5.
+Restart. (* lets try it with Coq tactics *)
+    intros [H1 H2] y.
+    apply H1.
+    apply H2.
 Qed.
 
-
-Definition leq (x y:nat) := exists z, x+z = y.
-Notation "x <= y" := (leq x y).
 
 (*
 3.30 (page 92)
@@ -32,9 +32,12 @@ Proof.
     forall_elim A0 x.
     equals_elim H0.
     equals_intro.
+Restart.
+    intros x.
+    unfold leq.
+    exists 0.
+    lia.
 Qed.
-
-Definition even (x:nat) := exists k, x = 2*k.
 
 (*
 3.33 (page 94)
@@ -57,4 +60,16 @@ Proof.
     equals_elim_rev H2.
     equals_elim_rev H3.
     equals_intro.
+Restart.
+    intros x y Hx Hy.
+    destruct Hx as [k1 Hk1].
+    destruct Hy as [k2 Hk2].
+    exists (k1+k2).
+    rewrite Hk1, Hk2.
+    lia.
 Qed.
+
+
+(*
+For more examples see 2022/script.v
+*)
