@@ -250,5 +250,16 @@ theorem f3_38':
   exists kx+ky
   rw [Nat.mul_add, <- Hx, <- Hy]
 
+theorem f3_41 (P: X×X→Prop):
+  (forall a b c, P (a,b) -> P (c,b) -> P (a,c)) ->
+  forall a b, P (a,b) -> P (a,a) := by
+  intro H1 a b H2
+  apply (H1 a b a H2 H2)
 
--- currently at Figure 3.14
+theorem l3_44 (P: X×X→Prop):
+  (forall x y, P (x,y) -> x=y) ->
+  forall x y z, P (x,y) -> P (y,z) -> P (x,z) := by
+  intro H1 x y z H2 H3
+  have H4 := H1 x y H2
+  rewrite [H4]
+  assumption
